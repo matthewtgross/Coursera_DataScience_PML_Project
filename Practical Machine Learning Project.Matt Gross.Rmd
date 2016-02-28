@@ -1,0 +1,158 @@
+---
+title: "Coursera Practical Machine Learning Project"
+author: "Matt Gross"
+date: "February 28, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project Overview
+
+Instructions: The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+First thing is to load libraries and data:
+
+```{r pml}
+library(caret)
+library(dplyr)
+#library(doMC)
+#registerDoMC(7)
+train <- read.csv(file = url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"), header = TRUE)
+test <- read.csv(file = url("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"), header = TRUE)
+```
+
+
+## Subset Data, Remove NZV
+
+Look at training data and identify/eliminate near zero variation columns:
+
+```{r subset_data}
+
+# find near zero variation
+nsv <- nearZeroVar(train,saveMetrics=TRUE)
+head(nsv)
+```
+
+## Select Columns Available in Prediction Dataset
+
+Identify columns in test dataset with non-NA values:
+
+```{r test_non_na}
+head(test)
+```
+
+
+## Now Subset Final Training Data
+
+Now select the final subset of training and testing data.
+
+```{r final_subset_data}
+
+train_subset <- select(train,c(roll_belt,pitch_belt,yaw_belt,total_accel_belt,gyros_belt_x,gyros_belt_y,
+gyros_belt_z,accel_belt_x,accel_belt_y,accel_belt_z,magnet_belt_x,magnet_belt_y,magnet_belt_z,roll_arm,
+pitch_arm,yaw_arm,total_accel_arm,gyros_arm_x,gyros_arm_y,gyros_arm_z,accel_arm_x,accel_arm_y,accel_arm_z,
+magnet_arm_x,magnet_arm_y,magnet_arm_z,roll_dumbbell,pitch_dumbbell,yaw_dumbbell,total_accel_dumbbell,gyros_dumbbell_x,
+gyros_dumbbell_y,gyros_dumbbell_z,accel_dumbbell_x,accel_dumbbell_y,accel_dumbbell_z,magnet_dumbbell_x,magnet_dumbbell_y,
+magnet_dumbbell_z,roll_forearm,pitch_forearm,yaw_forearm,total_accel_forearm,gyros_forearm_x,gyros_forearm_y,
+gyros_forearm_z,accel_forearm_x,accel_forearm_y,accel_forearm_z,magnet_forearm_x,magnet_forearm_y,
+magnet_forearm_z,classe))
+
+test_subset <- select(test,c(roll_belt,pitch_belt,yaw_belt,total_accel_belt,gyros_belt_x,gyros_belt_y,
+gyros_belt_z,accel_belt_x,accel_belt_y,accel_belt_z,magnet_belt_x,magnet_belt_y,magnet_belt_z,roll_arm,
+pitch_arm,yaw_arm,total_accel_arm,gyros_arm_x,gyros_arm_y,gyros_arm_z,accel_arm_x,accel_arm_y,accel_arm_z,
+magnet_arm_x,magnet_arm_y,magnet_arm_z,roll_dumbbell,pitch_dumbbell,yaw_dumbbell,total_accel_dumbbell,gyros_dumbbell_x,
+gyros_dumbbell_y,gyros_dumbbell_z,accel_dumbbell_x,accel_dumbbell_y,accel_dumbbell_z,magnet_dumbbell_x,magnet_dumbbell_y,
+magnet_dumbbell_z,roll_forearm,pitch_forearm,yaw_forearm,total_accel_forearm,gyros_forearm_x,gyros_forearm_y,
+gyros_forearm_z,accel_forearm_x,accel_forearm_y,accel_forearm_z,magnet_forearm_x,magnet_forearm_y,
+magnet_forearm_z))
+
+dim(train_subset)
+
+dim(test_subset)
+
+```
+
+## Now run the random forrest model with cross validation
+
+Build a model with random forrest method and cross validation (k=10).  I chose to use k=10 because I wanted to have less bias in my model to get the predictions right, but this will lead to higher variance.  Here we build predition model:
+
+```{r rf_model, eval=FALSE}
+modFit_5_wx_all <- train(classe~.,method="rf",data=train_subset,trControl=trainControl(method="cv",number=10),proxy=TRUE,allowParallel=TRUE)
+
+predict_5_wx_all <- predict(modFit_5_wx_all,test)
+predict_5_wx_all
+```
+
+## Results and Expected Out of Sample Error
+
+Show results:
+
+predict_5_wc_all = B A B A A E D B A A B C B A E E A B B B
+
+Expected Out of Sample Error is expected to be higher than the in sample error, especially considering that the model may have more variables than needed, and might be suffering from overfitting.
+
+
+## Appendix
+
+This is excess/WIP code, data and notes (not shown, can be viewed in code only.)
+
+```{r appendix, echo=FALSE, eval=FALSE}
+
+
+
+
+#test_subset <- select(test,c(gyros_forearm_x,gyros_forearm_y,gyros_forearm_z,accel_forearm_x,accel_forearm_y,accel_forearm_z,magnet_forearm_x,magnet_forearm_y,magnet_forearm_z))
+
+test_subset <- select(test,c(
+  gyros_belt_x,
+gyros_belt_y,
+gyros_belt_z,
+gyros_arm_x,
+gyros_arm_y,
+gyros_arm_z,
+gyros_dumbbell_x,
+gyros_dumbbell_y,
+gyros_dumbbell_z,
+gyros_forearm_x,
+gyros_forearm_y,
+gyros_forearm_z
+))
+
+
+
+#train_subset <- select(train,c(gyros_forearm_x,gyros_forearm_y,gyros_forearm_z,accel_forearm_x,accel_forearm_y,accel_forearm_z,magnet_forearm_x,magnet_forearm_y,magnet_forearm_z,classe))
+
+train_subset <- select(train,c(
+gyros_belt_x,
+gyros_belt_y,
+gyros_belt_z,
+gyros_arm_x,
+gyros_arm_y,
+gyros_arm_z,
+gyros_dumbbell_x,
+gyros_dumbbell_y,
+gyros_dumbbell_z,
+gyros_forearm_x,
+gyros_forearm_y,
+gyros_forearm_z,
+classe))
+
+#modFit <- train(classe ~ .,method="rpart",data=train_subset)
+#summary(modFit)
+
+#modFit <- train(classe ~ .,method="rf",data=train_subset,proxy=TRUE)
+#pred_rf <- predict(modFit,test)
+
+
+#modFit <- train(classe ~ .,method="rpart",data=train_subset)
+#summary(modFit)
+
+# really small set
+#pred_rf_1 <- predict(modFit,test) 
+
+# anything that is not nzv
+#pred_rf_2 <- predict(modFit,test) 
+```
